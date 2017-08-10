@@ -36,7 +36,7 @@ struct execcmd {
 };
 
 struct redircmd {
-  int type;          // < ou > 
+  int type;          // < ou >
   struct cmd *cmd;   // o comando a rodar (ex.: um execcmd)
   char *file;        // o arquivo de entrada ou saída
   int mode;          // o modo no qual o arquivo deve ser aberto
@@ -61,7 +61,7 @@ runcmd(struct cmd *cmd)
   struct pipecmd *pcmd;
   struct redircmd *rcmd;
 
-  if(cmd == 0)
+ if(cmd == 0)
     exit(0);
   
   switch(cmd->type){
@@ -71,22 +71,32 @@ runcmd(struct cmd *cmd)
 
   case ' ':
     ecmd = (struct execcmd*)cmd;
-    if(ecmd->argv[0] == 0)
-      exit(0);
+    if(ecmd->argv[0] == 0) {
+      exit(0); 
+    }
     /* MARK START task2
      * TAREFA2: Implemente codigo abaixo para executar
      * comandos simples. */
-    fprintf(stderr, "exec nao implementado\n");
+    //fprintf(stderr, "exec nao implementado\n"); 
+    execvp(ecmd->argv[0], ecmd->argv);
+    fprintf(stderr," exec %s failed\n", ecmd->argv[0]);
     /* MARK END task2 */
     break;
-
+  
   case '>':
   case '<':
     rcmd = (struct redircmd*)cmd;
+    printf("arg1: %s\narg2: %d\n",rcmd->file,rcmd->mode);
+
     /* MARK START task3
      * TAREFA3: Implemente codigo abaixo para executar
      * comando com redirecionamento. */
-    fprintf(stderr, "redir nao implementado\n");
+    close(rcmd->fd);
+    if(open(rcmd->file, rcmd->mode) < 0){
+      fprintf(stderr, " open failed\n ");
+      exit(0);
+    }
+    //fprintf(stderr, "redir nao implementado\n");
     /* MARK END task3 */
     runcmd(rcmd->cmd);
     break;
@@ -96,10 +106,30 @@ runcmd(struct cmd *cmd)
     /* MARK START task4
      * TAREFA4: Implemente codigo abaixo para executar
      * comando com pipes. */
-    fprintf(stderr, "pipe nao implementado\n");
+    if(pipe(p) < 0) 
+      fprintf(stderr, "panic n implementado\n");     
+    if(fork1() == 0) {
+      close(1);
+      dup(p[1]);
+      close(p[0]);
+      close(p[1]);
+      runcmd(pcmd->left);
+    }
+    if(fork1() == 0) {
+      close(0);
+      dup(p[0]);
+      close(p[0]);
+      close(p[1]);
+      runcmd(pcmd->right);
+    }
+    close(p[0]);
+    close(p[1]);
+    //wait();
+    //wait();
+    //fprintf(stderr, "pipe nao implementado\n");
     /* MARK END task4 */
     break;
-  }    
+  }
   exit(0);
 }
 
@@ -127,10 +157,11 @@ main(void)
     /* TAREFA1: O que faz o if abaixo e por que ele é necessário?
      * Insira sua resposta no código e modifique o fprintf abaixo
      * para reportar o erro corretamente. */
+
     if(buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' '){
-      buf[strlen(buf)-1] = 0;
+      buf[strlen(buf)-1] = 0; // remove \n
       if(chdir(buf+3) < 0)
-        fprintf(stderr, "reporte erro\n");
+        fprintf(stderr, "cd invalido -> %s\n", buf+3);
       continue;
     }
     /* MARK END task1 */
@@ -146,7 +177,7 @@ int
 fork1(void)
 {
   int pid;
-  
+
   pid = fork();
   if(pid == -1)
     perror("fork");
@@ -208,7 +239,7 @@ gettoken(char **ps, char *es, char **q, char **eq)
 {
   char *s;
   int ret;
-  
+
   s = *ps;
   while(s < es && strchr(whitespace, *s))
     s++;
@@ -233,7 +264,7 @@ gettoken(char **ps, char *es, char **q, char **eq)
   }
   if(eq)
     *eq = s;
-  
+
   while(s < es && strchr(whitespace, *s))
     s++;
   *ps = s;
@@ -244,7 +275,7 @@ int
 peek(char **ps, char *es, char *toks)
 {
   char *s;
-  
+
   s = *ps;
   while(s < es && strchr(whitespace, *s))
     s++;
@@ -258,7 +289,7 @@ struct cmd *parseexec(char**, char*);
 
 /* Copiar os caracteres no buffer de entrada, comeando de s ate es.
  * Colocar terminador zero no final para obter um string valido. */
-char 
+char
 *mkcopy(char *s, char *es)
 {
   int n = es - s;
@@ -337,7 +368,7 @@ parseexec(char **ps, char *es)
   int tok, argc;
   struct execcmd *cmd;
   struct cmd *ret;
-  
+
   ret = execcmd();
   cmd = (struct execcmd*)ret;
 
@@ -363,5 +394,3 @@ parseexec(char **ps, char *es)
 }
 
 // vim: expandtab:ts=2:sw=2:sts=2
-
-
