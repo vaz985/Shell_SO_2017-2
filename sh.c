@@ -63,7 +63,7 @@ runcmd(struct cmd *cmd)
 
  if(cmd == 0)
     exit(0);
-  
+
   switch(cmd->type){
   default:
     fprintf(stderr, "tipo de comando desconhecido\n");
@@ -72,31 +72,33 @@ runcmd(struct cmd *cmd)
   case ' ':
     ecmd = (struct execcmd*)cmd;
     if(ecmd->argv[0] == 0) {
-      exit(0); 
+      exit(0);
     }
     /* MARK START task2
      * TAREFA2: Implemente codigo abaixo para executar
      * comandos simples. */
-    //fprintf(stderr, "exec nao implementado\n"); 
+    //fprintf(stderr, "exec nao implementado\n");
     execvp(ecmd->argv[0], ecmd->argv);
     fprintf(stderr," exec %s failed\n", ecmd->argv[0]);
     /* MARK END task2 */
     break;
-  
+
   case '>':
   case '<':
     rcmd = (struct redircmd*)cmd;
-    printf("arg1: %s\narg2: %d\n",rcmd->file,rcmd->mode);
-
+    printf("arg1: %d\narg2: %d\n",rcmd->fd,rcmd->mode);
+    close(rcmd->fd);
     /* MARK START task3
      * TAREFA3: Implemente codigo abaixo para executar
      * comando com redirecionamento. */
-    close(rcmd->fd);
     if(open(rcmd->file, rcmd->mode) < 0){
       fprintf(stderr, " open failed\n ");
       exit(0);
     }
-    //fprintf(stderr, "redir nao implementado\n");
+    else {
+      chmod(rcmd->file, 0777);
+    }
+    //close(rcmd->fd);
     /* MARK END task3 */
     runcmd(rcmd->cmd);
     break;
@@ -106,8 +108,8 @@ runcmd(struct cmd *cmd)
     /* MARK START task4
      * TAREFA4: Implemente codigo abaixo para executar
      * comando com pipes. */
-    if(pipe(p) < 0) 
-      fprintf(stderr, "panic n implementado\n");     
+    if(pipe(p) < 0)
+      fprintf(stderr, "panic n implementado\n");
     if(fork1() == 0) {
       close(1);
       dup(p[1]);
@@ -209,7 +211,7 @@ redircmd(struct cmd *subcmd, char *file, int type)
   cmd->type = type;
   cmd->cmd = subcmd;
   cmd->file = file;
-  cmd->mode = (type == '<') ?  O_RDONLY : O_WRONLY|O_CREAT|O_TRUNC;
+  cmd->mode = (type == '<') ?  O_RDONLY : O_WRONLY|O_CREAT;
   cmd->fd = (type == '<') ? 0 : 1;
   return (struct cmd*)cmd;
 }
