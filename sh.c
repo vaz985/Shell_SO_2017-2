@@ -56,7 +56,7 @@ struct cmd *parsecmd(char*); // Processar o linha de comando.
 void
 runcmd(struct cmd *cmd)
 {
-  int p[2], r;
+  int p[2];
   struct execcmd *ecmd;
   struct pipecmd *pcmd;
   struct redircmd *rcmd;
@@ -79,14 +79,12 @@ runcmd(struct cmd *cmd)
      * comandos simples. */
     //fprintf(stderr, "exec nao implementado\n");
     execvp(ecmd->argv[0], ecmd->argv);
-    fprintf(stderr," exec %s failed\n", ecmd->argv[0]);
     /* MARK END task2 */
     break;
 
   case '>':
   case '<':
     rcmd = (struct redircmd*)cmd;
-    printf("arg1: %d\narg2: %d\n",rcmd->fd,rcmd->mode);
     close(rcmd->fd);
     /* MARK START task3
      * TAREFA3: Implemente codigo abaixo para executar
