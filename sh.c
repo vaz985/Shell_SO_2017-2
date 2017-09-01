@@ -106,8 +106,9 @@ runcmd(struct cmd *cmd)
     /* MARK START task4
      * TAREFA4: Implemente codigo abaixo para executar
      * comando com pipes. */
-    if(pipe(p) < 0)
+    if(pipe(p) < 0) {
       fprintf(stderr, "panic n implementado\n");
+    }
     if(fork1() == 0) {
       close(1);
       dup(p[1]);
@@ -124,8 +125,8 @@ runcmd(struct cmd *cmd)
     }
     close(p[0]);
     close(p[1]);
-    //wait();
-    //wait();
+    wait(0);
+    wait(0);
     //fprintf(stderr, "pipe nao implementado\n");
     /* MARK END task4 */
     break;
