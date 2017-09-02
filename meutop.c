@@ -6,6 +6,7 @@
 #include <dirent.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <time.h>
 
 struct Process{
   unsigned int pid;
@@ -57,32 +58,64 @@ void getProcesses(int* pidsList){
   DIR *dir;
   struct dirent *ent;
   int i = 0;
+  int process_count = 0;
+  
+  // Read /poc once to count the number of processes
   if ((dir = opendir ("/proc")) != NULL) {
-    /* print all the files and directories within directory */
-    while ((ent = readdir (dir)) != NULL && i < 20) {
+    while ((ent = readdir (dir)) != NULL) 
+      if(ent->d_type == isFolder && is_number(ent->d_name))
+        process_count++;
+    closedir (dir);
+  }else{
+    printf("Erro ao acessar /proc");
+  }
+  // Alocate a vector the size of the number of process found
+  int *processes = malloc(process_count*sizeof(int));
+  // Read the /proc directory again, filling the vector with the PID's found
+  if((dir = opendir ("/proc")) != NULL) {
+    while ((ent = readdir (dir)) != NULL) {
       if(ent->d_type == isFolder && is_number(ent->d_name)){
-        pidsList[i] = atoi(ent->d_name);
+        processes[i] = atoi(ent->d_name);
         i++;
       }
     }
     closedir (dir);
-  } else {
+  }else{
     /* could not open directory */
     printf("Erro ao acessar /proc");
+  }
+
+  // Get 20 random processes
+  i = 0;
+  srand(time(NULL)); 
+  int rand_pid = 0;
+  int invalid_pid;
+  int repeated = 0;
+  int j;
+  while(i<20){
+    invalid_pid = 1;
+    while(invalid_pid){
+      repeated = 0;
+      rand_pid = rand() % process_count;
+      // Avoid repeated PID number
+      for(j=0; j<i; j++)
+          if(pidsList[j] == processes[rand_pid])
+            repeated = 1;
+      if(rand_pid != 0 && !repeated)
+        invalid_pid = 0;
+    }
+    pidsList[i] = processes[rand_pid];
+    i++;
   }
 }
 
 int main(){
-  FILE * pp; 
   int pidsList[20];
   struct Process process_set[20];
-  while(1){
-    getProcesses(pidsList);    
-    for (int i = 0; i < 20; ++i)
-      process_set[i] = get_process_info(pidsList[i]);  
-    print_top_table(process_set);   
-    sleep(1);
-    system("clear");
-  } 
+  getProcesses(pidsList);    
+  for (int i = 0; i < 20; i++)
+    process_set[i] = get_process_info(pidsList[i]);  
+  print_top_table(process_set);   
+   
   return 0;
 }
