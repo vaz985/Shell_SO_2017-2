@@ -7,6 +7,8 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <time.h>
+#include <sys/types.h>
+#include <signal.h>
 
 struct Process{
   unsigned int pid;
@@ -116,9 +118,16 @@ int main(){
   for (int i = 0; i < 20; i++)
     process_set[i] = get_process_info(pidsList[i]);  
   print_top_table(process_set);   
-  /*int a, b;
-  printf(">");
-  scanf("%i %i", &a, &b);
-  printf("%d %d\n", a, b);*/
+  int dest_pid, signal, signal_status;
+  while(1){
+    printf(">");
+    scanf("%i %i", &dest_pid, &signal);
+    signal_status = kill(dest_pid, signal);
+    if(!signal_status)
+      printf("Signal successfully sent.\n");
+    else
+      printf("Error sending signal.\n");
+  }
+  
   return 0;
 }
