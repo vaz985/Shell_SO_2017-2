@@ -5,6 +5,7 @@
 #include <pwd.h>
 #include <dirent.h>
 #include <ctype.h>
+#include <unistd.h>
 
 struct Process{
   unsigned int pid;
@@ -74,10 +75,14 @@ void getProcesses(int* pidsList){
 int main(){
   FILE * pp; 
   int pidsList[20];
-  getProcesses(pidsList);  
   struct Process process_set[20];
-  for (int i = 0; i < 20; ++i)
-    process_set[i] = get_process_info(pidsList[i]);  
-  print_top_table(process_set);   
+  while(1){
+    getProcesses(pidsList);    
+    for (int i = 0; i < 20; ++i)
+      process_set[i] = get_process_info(pidsList[i]);  
+    print_top_table(process_set);   
+    sleep(1);
+    system("clear");
+  } 
   return 0;
 }
