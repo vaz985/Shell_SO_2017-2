@@ -12,22 +12,22 @@ struct Process{
   unsigned int pid;
   char state[10];
   char p_name[100];
-  unsigned char * u_name;
+  char u_name[100];
 };
 
 struct Process get_process_info(int pid){
   struct Process p;
-  struct passwd *pwd;
+  //struct passwd *pwd;
   char buffer[100];
-  struct stat stat_buffer;
   // Retrieve process information fromm /proc/*/stat
   sprintf(buffer,"%s%d%s","/proc/",pid,"/stat");
   FILE * fp = fopen(buffer,"r");
   fscanf(fp,"%d %s %s", &p.pid, p.p_name, p.state);
   // Retreive process owner's name
-  stat(buffer, &stat_buffer);
-  pwd = getpwuid(stat_buffer.st_uid);
-  p.u_name = pwd->pw_name;
+  struct stat info;
+  stat(buffer, &info); 
+  struct passwd *pw = getpwuid(info.st_uid);
+  strcpy(p.u_name, pw->pw_name);
   return p;
 }
 
@@ -116,6 +116,9 @@ int main(){
   for (int i = 0; i < 20; i++)
     process_set[i] = get_process_info(pidsList[i]);  
   print_top_table(process_set);   
-   
+  /*int a, b;
+  printf(">");
+  scanf("%i %i", &a, &b);
+  printf("%d %d\n", a, b);*/
   return 0;
 }
