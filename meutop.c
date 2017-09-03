@@ -9,6 +9,7 @@
 #include <time.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <pthread.h>
 
 struct Process{
   unsigned int pid;
@@ -33,13 +34,20 @@ struct Process get_process_info(int pid){
   return p;
 }
 
-void print_top_table(struct Process *process_set){
-  printf("%-7s|%-10s|%-20s|%-8s|\n", "PID", "User", "PROCNAME", "Estado");
-  printf("-------|----------|--------------------|--------|\n");
+char *create_top_table(struct Process *process_set, char* buffer){
+  buffer[0] = '\0'; // "Esvazia a string"
+  char line_buffer[1000];
+  sprintf(line_buffer, "%-7s|%-10s|%-20s|%-8s|\n", "PID", "User", "PROCNAME", "Estado");
+  strcat(buffer, line_buffer);
+  sprintf(line_buffer, "-------|----------|--------------------|--------|\n");
+  strcat(buffer, line_buffer);
   for (int i = 0; i < 20; ++i){
-    printf("%-7d|%-10s|%-20s|%-8s|\n", process_set[i].pid, process_set[i].u_name, process_set[i].p_name, process_set[i].state);
+    sprintf(line_buffer, "%-7d|%-10s|%-20s|%-8s|\n", process_set[i].pid, process_set[i].u_name, process_set[i].p_name, process_set[i].state);
+    strcat(buffer, line_buffer);
   }
-  printf("-------|----------|--------------------|--------|\n");
+  sprintf(line_buffer, "-------|----------|--------------------|--------|\n");
+  strcat(buffer, line_buffer);
+  return buffer;
 }
 
 int is_number(char* string){
@@ -111,23 +119,63 @@ void getProcesses(int* pidsList){
   }
 }
 
-int main(){
+
+typedef struct bashString{
+  char table_string[1000];
+  char signal_string[100];
+} bashString;
+
+void *thread_print_table(void *arg){
+  bashString *bash_text = (bashString*) arg;
   int pidsList[20];
   struct Process process_set[20];
-  getProcesses(pidsList);    
-  for (int i = 0; i < 20; i++)
-    process_set[i] = get_process_info(pidsList[i]);  
-  print_top_table(process_set);   
-  int dest_pid, signal, signal_status;
   while(1){
-    printf(">");
-    scanf("%i %i", &dest_pid, &signal);
-    signal_status = kill(dest_pid, signal);
-    if(!signal_status)
-      printf("Signal successfully sent.\n");
-    else
-      printf("Error sending signal.\n");
+    getProcesses(pidsList);    
+    for (int i = 0; i < 20; i++)
+      process_set[i] = get_process_info(pidsList[i]);  
+    char table[10000];
+    create_top_table(process_set, (*bash_text).table_string);
+    printf("%s\n", (*bash_text).table_string);
+    system("clear");
+    sleep(1);  
   }
   
+}
+
+void *thread_print_command_line(void *arg){
+  bashString *bash_text = (bashString*) arg;
+  while(1){
+    strcat((*bash_text).signal_string, "abc");
+    printf("%s\n", (*bash_text).signal_string);
+    sleep(2);
+    strcat((*bash_text).signal_string, "def");
+    sleep(2);
+    printf("%s\n", (*bash_text).signal_string);
+    strcat((*bash_text).signal_string, "ghi");
+    sleep(2);
+  }
+}
+
+
+
+int main(){
+  pthread_t threads[2];
+  char bash_text[10000];
+  int status;
+  struct bashString top_bash_text; 
+
+  status = pthread_create(&threads[0], NULL, thread_print_table, &top_bash_text);
+  if(status){
+      printf("Erro ao criar thread. pthread_create() retornou: %d\n", status);
+      exit(-1);
+  }
+  status = pthread_create(&threads[1], NULL, thread_print_command_line, &top_bash_text);
+  if(status){
+      printf("Erro ao criar thread. pthread_create() retornou: %d\n", status);
+      exit(-1);
+  }
+  pthread_join(threads[0], NULL);
+  pthread_join(threads[1], NULL);
+  printf("%s\n", bash_text);
   return 0;
 }
